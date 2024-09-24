@@ -1,6 +1,6 @@
 {
   "name": "pf-scaffold",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "自研前端脚手架  pf-scaffold",
   "main": "index.js",
   "scripts": {
