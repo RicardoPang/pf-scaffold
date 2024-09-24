@@ -1,6 +1,6 @@
 {
   "name": "@pf-scaffold/core",
-  "version": "1.0.2",
+  "version": "1.0.0",
   "description": "pf-scaffold core",
   "author": "pangfeng <ricardo.pangj@gmail.com>",
   "homepage": "",
@@ -22,5 +22,5 @@
   "dependencies": {
     "@pf-scaffold/utils": "^1.0.2"
   },
-  "gitHead": "252b283ab35e42a1e72be2edf1d921c6d61ce164"
+  "gitHead": "edfc11fcfaca944a5b2ddff7da3a1cbf907ddf7a"
 }
