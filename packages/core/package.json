@@ -22,5 +22,8 @@
   "dependencies": {
     "@pf-scaffold/utils": "^1.0.2"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "gitHead": "edfc11fcfaca944a5b2ddff7da3a1cbf907ddf7a"
 }
