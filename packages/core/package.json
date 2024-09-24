@@ -1,0 +1,22 @@
+{
+  "name": "@pf-scaffold/core",
+  "version": "1.0.0",
+  "description": "pf-scaffold core",
+  "author": "pangfeng <ricardo.pangj@gmail.com>",
+  "homepage": "",
+  "license": "ISC",
+  "main": "lib/core.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
+  "dependencies": {
+    "@pf-scaffold/utils": "^1.0.0"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@pf-scaffold/utils",
+  "version": "1.0.0",
+  "description": "pf-scaffold utils",
+  "author": "pangfeng <ricardo.pangj@gmail.com>",
+  "homepage": "",
+  "license": "ISC",
+  "main": "lib/index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  }
+}
