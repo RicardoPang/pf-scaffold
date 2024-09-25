@@ -1,0 +1,35 @@
+{
+  "name": "@pf-scaffold/get-npm-info",
+  "version": "1.0.4",
+  "description": "pf-scaffold get-npm-info",
+  "author": "pangfeng <ricardo.pangj@gmail.com>",
+  "homepage": "https://github.com/RicardoPang/pf-scaffold#readme",
+  "license": "ISC",
+  "main": "lib/index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RicardoPang/pf-scaffold.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
+  "dependencies": {
+    "axios": "^0.21.0",
+    "semver": "^7.3.4",
+    "url-join": "^4.0.1"
+  },
+  "devDependencies": {
+    "mocha": "^9.1.1",
+    "should": "^13.2.3"
+  },
+  "bugs": {
+    "url": "https://github.com/RicardoPang/pf-scaffold/issues"
+  }
+}

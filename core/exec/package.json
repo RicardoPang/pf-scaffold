@@ -1,0 +1,30 @@
+{
+  "name": "@pf-scaffold/exec",
+  "version": "1.0.4",
+  "description": "pf-scaffold exec",
+  "author": "pangfeng <ricardo.pangj@gmail.com>",
+  "homepage": "https://github.com/RicardoPang/pf-scaffold#readme",
+  "license": "ISC",
+  "main": "lib/index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RicardoPang/pf-scaffold.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
+  "dependencies": {
+    "@pf-scaffold/log": "file:../../utils/log",
+    "@pf-scaffold/utils": "file:../../utils/utils"
+  },
+  "bugs": {
+    "url": "https://github.com/RicardoPang/pf-scaffold/issues"
+  }
+}
