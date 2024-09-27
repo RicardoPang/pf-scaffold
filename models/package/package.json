@@ -17,6 +17,9 @@
     "type": "git",
     "url": "git+https://github.com/RicardoPang/pf-scaffold.git"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@pf-scaffold/format-path": "^1.0.6",
     "@pf-scaffold/get-npm-info": "^1.0.6",

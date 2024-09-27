@@ -17,6 +17,9 @@
     "type": "git",
     "url": "git+https://github.com/RicardoPang/pf-scaffold.git"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "mocha": "^9.1.1",
     "should": "^13.2.3"

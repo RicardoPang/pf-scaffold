@@ -17,6 +17,9 @@
     "type": "git",
     "url": "git+https://github.com/RicardoPang/pf-scaffold.git"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "echo \"Error: run tests from root\" && exit 1"
   },
@@ -27,5 +30,6 @@
   },
   "bugs": {
     "url": "https://github.com/RicardoPang/pf-scaffold/issues"
-  }
+  },
+  "gitHead": "75e3d8823f74a7a20f09ed5b662ab4ea47758626"
 }

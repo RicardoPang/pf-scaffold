@@ -18,7 +18,7 @@
   ],
   "dependencies": {
     "@pf-scaffold/exec": "^1.0.7",
-    "@pf-scaffold/get-npm-info": "file:../../utils/get-npm-info",
+    "@pf-scaffold/get-npm-info": "^1.0.6",
     "@pf-scaffold/init": "^1.0.6",
     "@pf-scaffold/log": "^1.0.6",
     "colors": "^1.4.0",
@@ -35,5 +35,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "edfc11fcfaca944a5b2ddff7da3a1cbf907ddf7a"
+  "gitHead": "75e3d8823f74a7a20f09ed5b662ab4ea47758626"
 }
