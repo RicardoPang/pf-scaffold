@@ -5,7 +5,7 @@ const fse = require('fs-extra');
 const pkgDir = require('pkg-dir').sync;
 const pathExists = require('path-exists').sync;
 const npminstall = require('npminstall');
-const isObject = require('@pf-scaffold/utils');
+const { isObject } = require('@pf-scaffold/utils');
 const formatPath = require('@pf-scaffold/format-path');
 const {
   getDefaultRegistry,
