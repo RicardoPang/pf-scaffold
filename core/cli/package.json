@@ -1,6 +1,6 @@
 {
   "name": "@pf-scaffold/core",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "pf-scaffold core",
   "author": "pangfeng <ricardo.pangj@gmail.com>",
   "homepage": "",
@@ -17,9 +17,9 @@
     "lib"
   ],
   "dependencies": {
-    "@pf-scaffold/exec": "^1.0.8",
-    "@pf-scaffold/get-npm-info": "^1.0.8",
-    "@pf-scaffold/init": "^1.0.8",
+    "@pf-scaffold/exec": "^1.0.9",
+    "@pf-scaffold/get-npm-info": "^1.0.9",
+    "@pf-scaffold/init": "^1.0.9",
     "@pf-scaffold/log": "^1.0.6",
     "colors": "^1.4.0",
     "commander": "^6.2.1",

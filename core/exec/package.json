@@ -1,6 +1,6 @@
 {
   "name": "@pf-scaffold/exec",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "pf-scaffold exec",
   "author": "pangfeng <ricardo.pangj@gmail.com>",
   "homepage": "https://github.com/RicardoPang/pf-scaffold#readme",
@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@pf-scaffold/log": "^1.0.6",
-    "@pf-scaffold/package": "^1.0.8",
+    "@pf-scaffold/package": "^1.0.9",
     "@pf-scaffold/utils": "^1.0.6"
   },
   "bugs": {
