@@ -1,7 +1,7 @@
 {
-  "name": "@pf-scaffold/exec",
+  "name": "@pf-scaffold/package",
   "version": "1.0.5",
-  "description": "pf-scaffold exec",
+  "description": "pf-scaffold package",
   "author": "pangfeng <ricardo.pangj@gmail.com>",
   "homepage": "https://github.com/RicardoPang/pf-scaffold#readme",
   "license": "ISC",
@@ -17,13 +17,18 @@
     "type": "git",
     "url": "git+https://github.com/RicardoPang/pf-scaffold.git"
   },
-  "scripts": {
-    "test": "echo \"Error: run tests from root\" && exit 1"
-  },
   "dependencies": {
-    "@pf-scaffold/log": "^1.0.4",
-    "@pf-scaffold/package": "^1.0.5",
-    "@pf-scaffold/utils": "^1.0.4"
+    "@pf-scaffold/format-path": "^1.0.5",
+    "@pf-scaffold/get-npm-info": "^1.0.4",
+    "@pf-scaffold/utils": "^1.0.4",
+    "fs-extra": "^9.0.1",
+    "npminstall": "^4.10.0",
+    "path-exists": "^4.0.0",
+    "pkg-dir": "^5.0.0"
+  },
+  "devDependencies": {
+    "mocha": "^9.1.0",
+    "should": "^13.2.3"
   },
   "bugs": {
     "url": "https://github.com/RicardoPang/pf-scaffold/issues"

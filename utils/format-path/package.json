@@ -1,7 +1,7 @@
 {
-  "name": "@pf-scaffold/exec",
+  "name": "@pf-scaffold/format-path",
   "version": "1.0.5",
-  "description": "pf-scaffold exec",
+  "description": "pf-scaffold format-path",
   "author": "pangfeng <ricardo.pangj@gmail.com>",
   "homepage": "https://github.com/RicardoPang/pf-scaffold#readme",
   "license": "ISC",
@@ -17,13 +17,9 @@
     "type": "git",
     "url": "git+https://github.com/RicardoPang/pf-scaffold.git"
   },
-  "scripts": {
-    "test": "echo \"Error: run tests from root\" && exit 1"
-  },
-  "dependencies": {
-    "@pf-scaffold/log": "^1.0.4",
-    "@pf-scaffold/package": "^1.0.5",
-    "@pf-scaffold/utils": "^1.0.4"
+  "devDependencies": {
+    "mocha": "^9.1.1",
+    "should": "^13.2.3"
   },
   "bugs": {
     "url": "https://github.com/RicardoPang/pf-scaffold/issues"
