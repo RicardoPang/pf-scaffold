@@ -1,6 +1,6 @@
 {
   "name": "@pf-scaffold/package",
-  "version": "1.0.9",
+  "version": "1.0.12",
   "description": "pf-scaffold package",
   "author": "pangfeng <ricardo.pangj@gmail.com>",
   "homepage": "https://github.com/RicardoPang/pf-scaffold#readme",
@@ -21,8 +21,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@pf-scaffold/format-path": "^1.0.9",
-    "@pf-scaffold/get-npm-info": "^1.0.9",
+    "@pf-scaffold/format-path": "^1.0.12",
+    "@pf-scaffold/get-npm-info": "^1.0.12",
     "@pf-scaffold/utils": "file:../../utils/utils",
     "fs-extra": "^9.0.1",
     "npminstall": "^4.10.0",
