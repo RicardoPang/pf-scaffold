@@ -1,6 +1,6 @@
 {
   "name": "@pf-scaffold/exec",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "pf-scaffold exec",
   "author": "pangfeng <ricardo.pangj@gmail.com>",
   "homepage": "https://github.com/RicardoPang/pf-scaffold#readme",
@@ -21,9 +21,9 @@
     "test": "echo \"Error: run tests from root\" && exit 1"
   },
   "dependencies": {
-    "@pf-scaffold/log": "^1.0.4",
-    "@pf-scaffold/package": "^1.0.5",
-    "@pf-scaffold/utils": "^1.0.4"
+    "@pf-scaffold/log": "^1.0.6",
+    "@pf-scaffold/package": "^1.0.6",
+    "@pf-scaffold/utils": "^1.0.6"
   },
   "bugs": {
     "url": "https://github.com/RicardoPang/pf-scaffold/issues"
