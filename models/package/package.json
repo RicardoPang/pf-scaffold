@@ -23,7 +23,7 @@
   "dependencies": {
     "@pf-scaffold/format-path": "^1.0.12",
     "@pf-scaffold/get-npm-info": "^1.0.12",
-    "@pf-scaffold/utils": "file:../../utils/utils",
+    "@pf-scaffold/utils": "^1.0.12",
     "fs-extra": "^9.0.1",
     "npminstall": "^4.10.0",
     "path-exists": "^4.0.0",

@@ -1,7 +1,7 @@
 {
-  "name": "@pf-scaffold/init",
+  "name": "@pf-scaffold/command",
   "version": "1.0.12",
-  "description": "pf-scaffold init",
+  "description": "pf-scaffold command",
   "author": "pangfeng <ricardo.pangj@gmail.com>",
   "homepage": "https://github.com/RicardoPang/pf-scaffold#readme",
   "license": "ISC",
@@ -17,25 +17,19 @@
     "type": "git",
     "url": "git+https://github.com/RicardoPang/pf-scaffold.git"
   },
-  "publishConfig": {
-    "access": "public"
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
   },
   "dependencies": {
-    "@pf-scaffold/command": "^1.0.12",
     "@pf-scaffold/log": "^1.0.12",
-    "@pf-scaffold/package": "^1.0.12",
-    "@pf-scaffold/utils": "^1.0.12",
-    "ejs": "^3.1.5",
-    "fs-extra": "^9.0.1",
-    "glob": "^7.1.6",
-    "inquirer": "^7.3.3",
-    "kebab-case": "^1.0.0",
-    "semver": "^7.3.4",
-    "spinner": "^0.3.4",
-    "user-home": "^2.0.0"
+    "colors": "^1.4.0",
+    "semver": "^7.3.4"
+  },
+  "devDependencies": {
+    "mocha": "^9.1.1",
+    "should": "^13.2.3"
   },
   "bugs": {
     "url": "https://github.com/RicardoPang/pf-scaffold/issues"
-  },
-  "gitHead": "c0c4cb3f57f31fa684e836a9c94788c2beb310b3"
+  }
 }

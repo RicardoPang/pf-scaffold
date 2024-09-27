@@ -1,5 +1,9 @@
 'use strict';
 
+// 动态加载 命令抽象为Package
+// 既可以通过缓存实时从npm下载, 也可以从本地映射命令
+// 输出入口文件地址rootFile
+
 const path = require('path');
 const fse = require('fs-extra');
 const pkgDir = require('pkg-dir').sync;
@@ -27,7 +31,7 @@ class Package {
     // package的name
     this.packageName = options.packageName;
     // package的version
-    this.pacageVersion = options.packageVersion;
+    this.packageVersion = options.packageVersion;
     // package的缓存目录前缀
     this.cacheFilePathPrefix = this.packageName.replace('/', '_');
   }
@@ -47,9 +51,12 @@ class Package {
   }
 
   async prepare() {
+    if (this.storeDir && !pathExists(this.storeDir)) {
+      fse.mkdirpSync(this.storeDir); // 创建路径所有的文件
+    }
     if (this.packageVersion === 'latest') {
-      this.pacageVersion = await getNpmLatestVersion(this.packageName);
-      console.log('prepare', this.pacageVersion);
+      this.packageVersion = await getNpmLatestVersion(this.packageName);
+      console.log('prepare', this.packageVersion);
     }
   }
 
@@ -57,7 +64,6 @@ class Package {
   async exists() {
     if (this.storeDir) {
       await this.prepare();
-      console.log('cacheFilePath', this.cacheFilePath);
       return pathExists(this.cacheFilePath);
     } else {
       return pathExists(this.targetPath);
@@ -74,7 +80,7 @@ class Package {
       pkgs: [
         {
           name: this.packageName,
-          version: this.pacageVersion,
+          version: this.packageVersion,
         },
       ],
     });
@@ -83,7 +89,27 @@ class Package {
   // 更新Package
   async update() {
     await this.prepare();
-    //
+    // 1. 获取最新的npm模块版本号
+    const latestPackageVersion = await getNpmLatestVersion(this.packageName);
+    // 2. 查询最新版本号对应的路径是否存在
+    const latestFilePath = this.getSpecificCacheFilePath(latestPackageVersion);
+    // 3. 如果不存在, 则直接安装最新版本
+    if (!pathExists(latestFilePath)) {
+      await npminstall({
+        root: this.targetPath,
+        storeDir: this.storeDir,
+        registry: getDefaultRegistry(),
+        pkgs: [
+          {
+            name: this.packageName,
+            version: latestPackageVersion,
+          },
+        ],
+      });
+      this.packageVersion = latestPackageVersion;
+    } else {
+      this.packageVersion = latestPackageVersion;
+    }
   }
 
   // 获取入口文件路径
