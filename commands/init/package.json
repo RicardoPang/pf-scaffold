@@ -25,6 +25,7 @@
     "@pf-scaffold/log": "^1.0.12",
     "@pf-scaffold/package": "^1.0.12",
     "@pf-scaffold/utils": "^1.0.12",
+    "@pf-scaffold/request": "^1.0.12",
     "ejs": "^3.1.5",
     "fs-extra": "^9.0.1",
     "glob": "^7.1.6",
