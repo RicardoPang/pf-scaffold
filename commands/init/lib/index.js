@@ -52,7 +52,29 @@ class InitCommand extends Command {
     }
   }
 
-  async installTemplate() {}
+  async installTemplate() {
+    log.verbose('templateInfo', this.templateInfo);
+    if (this.templateInfo) {
+      if (!this.templateInfo.type) {
+        this.templateInfo.type = TEMPLATE_TYPE_NORMAL;
+      }
+      if (this.templateInfo.type === TEMPLATE_TYPE_NORMAL) {
+        // 标准安装
+        await installNormalTemplate();
+      } else if (this.templateInfo.type === TEMPLATE_TYPE_CUSTOM) {
+        // 自定义安装
+        await this.installCustomTemplte();
+      } else {
+        throw new Error('无法识别项目模板类型');
+      }
+    } else {
+      throw new Error('项目模板信息不存在');
+    }
+  }
+
+  async installNormalTemplate() {}
+
+  async installCustomTemplte() {}
 
   async downloadTemplate() {
     // 1. 通过项目模板API获取项目模板信息
