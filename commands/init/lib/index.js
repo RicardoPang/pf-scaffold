@@ -60,10 +60,10 @@ class InitCommand extends Command {
       }
       if (this.templateInfo.type === TEMPLATE_TYPE_NORMAL) {
         // 标准安装
-        await installNormalTemplate();
+        await this.installNormalTemplate();
       } else if (this.templateInfo.type === TEMPLATE_TYPE_CUSTOM) {
         // 自定义安装
-        await this.installCustomTemplte();
+        await this.installCustomTemplate();
       } else {
         throw new Error('无法识别项目模板类型');
       }
@@ -72,9 +72,150 @@ class InitCommand extends Command {
     }
   }
 
-  async installNormalTemplate() {}
+  async installNormalTemplate() {
+    log.verbose('templateNpm', this.templateNpm);
+    // 拷贝模板代码至当前目录
+    let spinner = spinnerStart('正在安装模板...');
+    await sleep();
+    const targetPath = process.cwd();
+    try {
+      const templatePath = path.resolve(
+        this.templateNpm.cacheFilePath,
+        'template'
+      );
+      fse.ensureDirSync(templatePath);
+      fse.ensureDirSync(targetPath);
+      fse.copySync(templatePath, targetPath);
+    } catch (e) {
+      throw e;
+    } finally {
+      spinner.stop(true);
+      log.success('模板安装成功');
+    }
+    const templateIgnore = this.templateInfo.ignore || [];
+    const ignore = ['**/node_modules/**', ...templateIgnore];
+    await this.ejsRender({ ignore });
+    // 如果是组件, 则生成组件配置文件
+    await this.createComponentFile(targetPath);
+    const { installCommand, startCommand } = this.templateInfo;
+    // 依赖安装
+    await this.execCommand(installCommand, '依赖安装失败');
+    // 启动命令执行
+    await this.execCommand(startCommand, '启动执行命令失败');
+  }
 
-  async installCustomTemplte() {}
+  async ejsRender(options) {
+    const dir = process.cwd();
+    const projectInfo = this.projectInfo;
+    return new Promise((resolve, reject) => {
+      glob(
+        '**',
+        {
+          cwd: dir,
+          ignore: options.ignore || '',
+          nodir: true,
+        },
+        function (err, files) {
+          if (err) {
+            reject(err);
+          }
+          Promise.all(
+            files.map((file) => {
+              const filePath = path.join(dir, file);
+              return new Promise((resolve1, reject1) => {
+                ejs.renderFile(filePath, projectInfo, {}, (err, result) => {
+                  if (err) {
+                    reject1(err);
+                  } else {
+                    fse.writeFileSync(filePath, result);
+                    resolve1(result);
+                  }
+                });
+              });
+            })
+          )
+            .then(() => {
+              resolve();
+            })
+            .catch((err) => {
+              reject(err);
+            });
+        }
+      );
+    });
+  }
+
+  checkCommand(cmd) {
+    if (WHITE_COMMAND.includes(cmd)) {
+      return cmd;
+    }
+    return null;
+  }
+
+  async execCommand(command, errMsg) {
+    let ret;
+    if (command) {
+      const cmdArray = command.split(' ');
+      const cmd = this.checkCommand(cmdArray[0]);
+      if (!cmd) {
+        throw new Error('命令不存在！命令：' + command);
+      }
+      const args = cmdArray.slice(1);
+      ret = await execAsync(cmd, args, {
+        stdio: 'inherit',
+        cwd: process.cwd(),
+      });
+    }
+    if (ret !== 0) {
+      throw new Error(errMsg);
+    }
+    return ret;
+  }
+
+  async createComponentFile(targetPath) {
+    const templateInfo = this.templateInfo;
+    const projectInfo = this.projectInfo;
+    if (templateInfo.tag.includes(TYPE_COMPONENT)) {
+      const componentData = {
+        ...projectInfo,
+        buildPath: templateInfo.buildPath,
+        examplePath: templateInfo.examplePath,
+        npmName: templateInfo.npmName,
+        npmVersion: templateInfo.version,
+      };
+      const componentFile = path.resolve(targetPath, COMPONENT_FILE);
+      fs.writeFileSync(componentFile, JSON.stringify(componentData));
+    }
+  }
+
+  async installCustomTemplate() {
+    // 查询自定义模板的入口文件
+    if (await this.templateNpm.exists()) {
+      const rootFile = this.templateNpm.getRootFilePath();
+      if (fs.existsSync(rootFile)) {
+        log.notice('开始执行自定义模板');
+        const templatePath = path.resolve(
+          this.templateNpm.cacheFilePath,
+          'template'
+        );
+        const options = {
+          templateInfo: this.templateInfo,
+          projectInfo: this.projectInfo,
+          sourcePath: templatePath,
+          targetPath: process.cwd(),
+        };
+        const code = `require('${rootFile}')(${JSON.stringify(options)})`;
+        log.verbose('code', code);
+        await execAsync('node', ['-e', code], {
+          stdio: 'inherit',
+          cwd: process.cwd(),
+        });
+        log.success('自定义模板安装成功');
+      } else {
+        throw new Error('自定义模板入口文件不存在');
+      }
+    }
+  }
 
   async downloadTemplate() {
     // 1. 通过项目模板API获取项目模板信息
