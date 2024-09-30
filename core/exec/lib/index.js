@@ -8,6 +8,8 @@ const { cwd } = require('process');
 
 const SETTINGS = {
   init: '@pf-scaffold/init',
+  add: '@pf-scaffold/add',
+  publish: '@pf-scaffold/publish',
 };
 
 const CACHE_DIR = 'dependencies';
