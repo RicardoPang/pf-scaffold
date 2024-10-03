@@ -16,6 +16,10 @@ request.interceptors.response.use(
     return response.data;
   },
   (error) => {
+    console.error(
+      'Request failed:',
+      error.response ? error.response.data : error.message
+    );
     return Promise.reject(error);
   }
 );

@@ -27,6 +27,6 @@
     "url": "https://github.com/RicardoPang/pf-scaffold/issues"
   },
   "dependencies": {
-    "axios": "^1.7.7"
+    "axios": "^0.21.1"
   }
 }

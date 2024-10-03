@@ -22,22 +22,37 @@ const ADD_MODE_PAGE = 'page';
 const TYPE_CUSTOM = 'custom';
 const TYPE_NORMAL = 'normal';
 
-const TEMPLATE = [
-  {
-    name: 'Vue2首页模板',
-    npmName: 'pf-scaffold-template-page-vue2',
-    version: '1.0.4',
-    targetPath: 'src/views/Home',
-    ignore: ['assets/**'],
-  },
-];
-
 class AddCommand extends Command {
   init() {
     // 获取add命令的初始化参数
   }
 
   async exec() {
+    // 代码片段（区块）：以源码形式拷贝的vue组件
+    // 1. 选择复用方式
+    this.addMode = (await this.getAddMode()).addMode;
+    if (this.addMode === ADD_MODE_SECTION) {
+      await this.installSectionTemplate();
+    } else {
+      await this.installPageTemplate();
+    }
+  }
+
+  async installSectionTemplate() {
+    // 1.获取页面安装文件夹
+    this.dir = process.cwd();
+    // 2.选择代码片段模板
+    this.sectionTemplate = await this.getTemplate(ADD_MODE_SECTION);
+    // 3.安装代码片段模板
+    // 3.1 预检查(检查目录重名问题)
+    await this.prepare(ADD_MODE_SECTION);
+    // 3.2 代码片段模板下载
+    await this.downloadTemplate(ADD_MODE_SECTION);
+    // 3.3. 代码片段安装
+    await this.installSection();
+  }
+
+  async installPageTemplate() {
     // 1.获取页面安装文件夹
     this.dir = process.cwd();
     // 2.选择页面模板
@@ -50,6 +65,24 @@ class AddCommand extends Command {
     // 4.合并页面模板依赖
     // 5.页面模板安装完成
     await this.installTemplate();
+  }
+
+  async getAddMode() {
+    return inquirer.prompt({
+      type: 'list',
+      name: 'addMode',
+      message: '请选择代码复用模式',
+      choices: [
+        {
+          name: '代码片段',
+          value: ADD_MODE_SECTION,
+        },
+        {
+          name: '页面模板',
+          value: ADD_MODE_PAGE,
+        },
+      ],
+    });
   }
 
   async prepare(addMode = ADD_MODE_PAGE) {
@@ -103,7 +136,6 @@ class AddCommand extends Command {
             this.sectionTemplatePackage = templatePackage;
           }
         }
-        console.log(this.pageTemplatePackage);
       }
     } else {
       const spinner = spinnerStart('正在更新' + name + '模板...');
@@ -125,6 +157,82 @@ class AddCommand extends Command {
         }
       }
     }
+  }
+
+  async installSection() {
+    // 1. 选择要插入的源码文件
+    const files = fs
+      .readdirSync(this.dir, { withFileTypes: true })
+      .map((file) => (file.isFile() ? file.name : null))
+      .filter((_) => _)
+      .map((file) => ({ name: file, value: file }));
+    if (files.length === 0) {
+      throw new Error('当前文件夹下没有文件');
+    }
+    const codeFile = (
+      await inquirer.prompt({
+        type: 'list',
+        message: '请选择要插入代码片段的源码文件',
+        name: 'codeFile',
+        choices: files,
+      })
+    ).codeFile;
+    // 2. 需要用户输入插入行数
+    const lineNumber = (
+      await inquirer.prompt({
+        type: 'input',
+        message: '请输入要插入的行数',
+        name: 'lineNumber',
+        validate: function (value) {
+          const done = this.async();
+          if (!value || !value.trim()) {
+            done('插入的行数不能为空');
+          } else if (value >= 0 && Math.floor(value) === Number(value)) {
+            done(null, true);
+          } else {
+            done('插入的行数必须为整数');
+          }
+        },
+      })
+    ).lineNumber;
+    log.verbose('codeFile:', codeFile);
+    log.verbose('lineNumber:', lineNumber);
+    // 3. 对源码文件进行分割成数组
+    const codeFilePath = path.resolve(this.dir, codeFile);
+    const codeContent = fs.readFileSync(codeFilePath, 'utf-8');
+    const codeCotnentArr = codeContent.split('\n');
+    // 4. 以数组形式插入代码片段
+    const componentName = this.sectionTemplate.sectionName.toLocaleLowerCase();
+    const componentNameOriginal = this.sectionTemplate.sectionName;
+    codeCotnentArr.splice(
+      lineNumber,
+      0,
+      `<${componentName}></${componentName}>`
+    );
+    // 5. 插入代码片段的import语句
+    const scriptIndex = codeCotnentArr.findIndex(
+      (code) => code.replace(/\s/g, '') === '<script>'
+    );
+    codeCotnentArr.splice(
+      scriptIndex + 1,
+      0,
+      `import ${componentNameOriginal} from './components/${componentNameOriginal}/index.vue'`
+    );
+    log.verbose('codeCotnentArr', codeCotnentArr);
+    // 6. 将代码还原为string
+    const newCodeContent = codeCotnentArr.join('\n');
+    fs.writeFileSync(codeFilePath, newCodeContent, 'utf-8');
+    log.success('代码片段写入成功');
+    // 7. 创建代码片段组件目录
+    fse.ensureDirSync(this.targetPath);
+    const templatePath = path.resolve(
+      this.sectionTemplatePackage.cacheFilePath,
+      'template',
+      this.sectionTemplate.targetPath ? this.sectionTemplate.targetPath : ''
+    );
+    const targetPath = this.targetPath;
+    fse.copySync(templatePath, targetPath);
+    log.success('代码片段拷贝成功');
   }
 
   async installTemplate() {
@@ -152,7 +260,26 @@ class AddCommand extends Command {
     }
   }
 
-  async installCustomPageTemplate({ templatePath, targetPath }) {}
+  async installCustomPageTemplate({ templatePath, targetPath }) {
+    // 1. 获取自定义模板的入口文件
+    const rootFile = this.pageTemplatePackage.getRootFilePath();
+    if (fs.existsSync(rootFile)) {
+      log.notice('开始执行自定义模板');
+      const options = {
+        templatePath,
+        targetPath,
+        pageTemplate: this.pageTemplate,
+      };
+      const code = `require('${rootFile}')(${JSON.stringify(options)})`;
+      await execAsync('node', ['-e', code], {
+        stdio: 'inherit',
+        cwd: process.cwd(),
+      });
+      log.success('自定义模板安装成功');
+    } else {
+      throw new Error('自定义模板入口文件不存在');
+    }
+  }
 
   async installNormalPageTemplate({ templatePath, targetPath }) {
     fse.copySync(templatePath, targetPath);
@@ -302,17 +429,17 @@ class AddCommand extends Command {
   async getTemplate(addMode = ADD_MODE_PAGE) {
     const name = addMode === ADD_MODE_PAGE ? '页面' : '代码片段';
     // 通过API获取模板列表
-    // if (addMode === ADD_MODE_PAGE) {
-    //   const pageTemplateData = await this.getPageTemplate;
-    //   this.pageTemplateData = pageTemplateData;
-    // } else {
-    //   const sectionTemplateData = await this.getSectionTemplate();
-    //   this.sectionTemplateData = sectionTemplateData;
-    // }
-    // const TEMPLATE =
-    //   addMode === ADD_MODE_PAGE
-    //     ? this.pageTemplateData
-    //     : this.sectionTemplateData;
+    if (addMode === ADD_MODE_PAGE) {
+      const pageTemplateData = await this.getPageTemplate();
+      this.pageTemplateData = pageTemplateData;
+    } else {
+      const sectionTemplateData = await this.getSectionTemplate();
+      this.sectionTemplateData = sectionTemplateData;
+    }
+    const TEMPLATE =
+      addMode === ADD_MODE_PAGE
+        ? this.pageTemplateData
+        : this.sectionTemplateData;
     const pageTemplateName = (
       await inquirer.prompt({
         type: 'list',
@@ -365,19 +492,15 @@ class AddCommand extends Command {
   }
 
   createChoices(addMode) {
-    // return addMode === ADD_MODE_PAGE
-    //   ? this.pageTemplateData.map((item) => ({
-    //       name: item.name,
-    //       value: item.npmName,
-    //     }))
-    //   : this.sectionTemplateData.map((item) => ({
-    //       name: item.name,
-    //       value: item.npmName,
-    //     }));
-    return TEMPLATE.map((item) => ({
-      name: item.name,
-      value: item.npmName,
-    }));
+    return addMode === ADD_MODE_PAGE
+      ? this.pageTemplateData.map((item) => ({
+          name: item.name,
+          value: item.npmName,
+        }))
+      : this.sectionTemplateData.map((item) => ({
+          name: item.name,
+          value: item.npmName,
+        }));
   }
 }
 
