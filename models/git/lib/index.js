@@ -168,6 +168,7 @@ class Git {
 
   async pushRemoteRepo(branchName) {
     await this.git.push('origin', branchName);
+    log.success('推送代码成功');
   }
 
   async pullRemoteRepo(branchName, options) {
@@ -468,6 +469,159 @@ pnpm-debug.log*
       throw new Error('用户主目录获取失败！');
     }
   }
+
+  async commit() {
+    // 1. 生成开发分支
+    await this.getCorrectVersion();
+    // 2. 检查stash区
+    await this.checkStash();
+    // 3. 检查代码冲突
+    await this.checkConflicted();
+    // 4. 检查未提交代码
+    await this.checkNotCommitted();
+    // 5. 切换开发分支
+    await this.checkoutBranch(this.branch);
+    // 6. 合并远程master/main分支和开发分支代码
+    await this.pullRemoteMasterAndBranch();
+    // 7. 将开发分支推送到远程仓库
+    await this.pushRemoteRepo(this.branch);
+  }
+
+  async pullRemoteMasterAndBranch() {
+    log.info(`合并 [main] -> [${this.branch}]`);
+    await this.pullRemoteRepo('main');
+    log.success('合并远程 [main] 分支代码成功');
+    await this.checkConflicted();
+    log.info('检查远程开发分支');
+    const remoteBranchList = await this.getRemoteBranchList();
+    if (remoteBranchList.indexOf(this.version) >= 0) {
+      log.info(`合并 [${this.branch}] -> [${this.branch}]`);
+      await this.pullRemoteRepo(this.branch);
+      log.success(`合并远程 [${this.branch}] 分支代码成功`);
+      await this.checkConflicted();
+    } else {
+      log.success(`不存在远程分支 [${this.branch}]`);
+    }
+  }
+
+  async checkoutBranch(branch) {
+    const localBranchList = await this.git.branchLocal();
+    if (localBranchList.all.indexOf(branch) >= 0) {
+      await this.git.checkout(branch);
+    } else {
+      await this.git.checkoutLocalBranch(branch);
+    }
+    log.success(`分支切换到${branch}`);
+  }
+
+  async checkStash() {
+    log.info('检查stash记录');
+    const stashList = await this.git.stashList();
+    if (stashList.all.length > 0) {
+      await this.git.stash(['pop']);
+      log.success('stash pop 成功');
+    }
+  }
+
+  async getRemoteBranchList(type) {
+    const remoteList = await this.git.listRemote(['--refs']);
+    let reg;
+    if (type === VERSION_RELEASE) {
+      reg = /.+?refs\/tags\/release\/(\d+\.\d+\.\d+)/g;
+    } else {
+      reg = /.+?refs\/heads\/dev\/(\d+\.\d+\.\d+)/g;
+    }
+    return remoteList
+      .split('\n')
+      .map((remote) => {
+        const match = reg.exec(remote);
+        reg.lastIndex = 0;
+        if (match && semver.valid(match[1])) {
+          return match[1];
+        }
+      })
+      .filter((_) => _)
+      .sort((a, b) => {
+        if (semver.lte(b, a)) {
+          if (a === b) return 0;
+          return -1;
+        }
+        return 1;
+      });
+  }
+
+  syncVersionToPackageJson() {
+    const pkg = fse.readJsonSync(`${this.dir}/package.json`);
+    if (pkg && pkg.version !== this.version) {
+      pkg.version = this.version;
+      fse.writeJsonSync(`${this.dir}/package.json`, pkg, { spaces: 2 });
+    }
+  }
+
+  async getCorrectVersion() {
+    // 1. 获取远程分布分支
+    // 版本号规范：release/x.y.z，dev/x.y.z
+    // 版本号递增规范：major/minor/patch
+    log.info('获取代码分支');
+    const remoteBranchList = await this.getRemoteBranchList(VERSION_RELEASE);
+    let releaseVersion = null;
+    if (remoteBranchList && remoteBranchList.length > 0) {
+      releaseVersion = remoteBranchList[0];
+    }
+    log.verbose('线上最新版本号', releaseVersion);
+    // 2. 生成本地开发分支
+    const devVersion = this.version;
+    if (!releaseVersion) {
+      this.branch = `${VERSION_DEVELOP}/${devVersion}`;
+    } else if (semver.gt(this.version, releaseVersion)) {
+      log.info(
+        '当前版本大于线上最新版本',
+        `${devVersion} >= ${releaseVersion}`
+      );
+      this.branch = `${VERSION_DEVELOP}/${devVersion}`;
+    } else {
+      log.info('当前线上版本大于本地版本', `${releaseVersion} > ${devVersion}`);
+      const incType = (
+        await inquirer.prompt({
+          type: 'list',
+          name: 'incType',
+          message: '自动升级版本, 请选择升级版本类型',
+          default: 'patch',
+          choices: [
+            {
+              name: `小版本（${releaseVersion} -> ${semver.inc(
+                releaseVersion,
+                'patch'
+              )}）`,
+              value: 'patch',
+            },
+            {
+              name: `中版本（${releaseVersion} -> ${semver.inc(
+                releaseVersion,
+                'minor'
+              )}）`,
+              value: 'minor',
+            },
+            {
+              name: `大版本（${releaseVersion} -> ${semver.inc(
+                releaseVersion,
+                'major'
+              )}）`,
+              value: 'major',
+            },
+          ],
+        })
+      ).incType;
+      const incVersion = semver.inc(releaseVersion, incType);
+      this.branch = `${VERSION_DEVELOP}/${incVersion}`;
+      this.version = incVersion;
+    }
+    log.verbose('本地开发分支', this.branch);
+    // 3. 将version同步到package.json
+    this.syncVersionToPackageJson();
+  }
+
+  async publish() {}
 }
 
 module.exports = Git;
