@@ -621,7 +621,31 @@ pnpm-debug.log*
     this.syncVersionToPackageJson();
   }
 
-  async publish() {}
+  async preparePublish() {
+    log.info('开始进行云构建前代码检查');
+    const pkg = this.getPackageJson();
+    if (this.buildCmd) {
+      const buildCmdArray = this.buildCmd.split(' ');
+      if (buildCmdArray[0] !== 'npm' && buildCmdArray[0] !== 'cnpm') {
+        throw new Error('Build命令非法，必须使用npm或cnpm！');
+      }
+    } else {
+      this.buildCmd = 'npm run build';
+    }
+  }
+
+  async publish() {
+    let ret = false;
+    await this.preparePublish();
+    const cloudBuild = new CloudBuild(this, {
+      buildCmd: this.buildCmd,
+      type: this.gitPublish,
+      prod: this.prod,
+    });
+    await cloudBuild.init();
+    ret = await cloudBuild.build();
+    console.log(ret);
+  }
 }
 
 module.exports = Git;
