@@ -621,6 +621,51 @@ pnpm-debug.log*
     this.syncVersionToPackageJson();
   }
 
+  async uploadTemplate() {
+    const TEMPLATE_FILE_NAME = 'index.html';
+    if (this.sshUser && this.sshIp && this.sshPath) {
+      log.info('开始下载模板文件');
+      let ossTemplateFile = await request({
+        url: '/oss/get',
+        params: {
+          name: this.name,
+          type: this.prod ? 'prod' : 'dev',
+          file: TEMPLATE_FILE_NAME,
+        },
+      });
+      if (ossTemplateFile.code === 0 && ossTemplateFile.data) {
+        ossTemplateFile = ossTemplateFile.data;
+      }
+      log.verbose('模板文件url', ossTemplateFile.url);
+      const response = await request({
+        url: ossTemplateFile.url,
+      });
+      console.log(response);
+      if (response) {
+        const ossTempDir = path.resolve(
+          this.homePath,
+          TEMPLATE_TEMP_DIR,
+          `${this.name}@${this.version}`
+        );
+        if (!fs.existsSync(ossTempDir)) {
+          fse.mkdirpSync(ossTempDir);
+        } else {
+          fse.emptyDirSync(ossTempDir);
+        }
+        const templateFilePath = path.resolve(ossTempDir, TEMPLATE_FILE_NAME);
+        fse.createFileSync(templateFilePath);
+        fs.writeFileSync(templateFilePath, response);
+        log.success('模板文件下载成功', templateFilePath);
+        log.info('开始上传模板文件至服务器');
+        const uploadCmd = `scp -r ${templateFilePath} ${this.sshUser}@${this.sshIp}:${this.sshPath}`;
+        log.verbose('uploadCmd', uploadCmd);
+        require('child_process').execSync(uploadCmd);
+        log.success('模板文件上传成功');
+        fse.emptyDirSync(ossTempDir);
+      }
+    }
+  }
+
   async preparePublish() {
     log.info('开始进行云构建前代码检查');
     const pkg = this.getPackageJson();
@@ -632,6 +677,71 @@ pnpm-debug.log*
     } else {
       this.buildCmd = 'npm run build';
     }
+    const buildCmdArray = this.buildCmd.split(' ');
+    const lastCmd = buildCmdArray[buildCmdArray.length - 1];
+    if (!pkg.scripts || !Object.keys(pkg.scripts).includes(lastCmd)) {
+      throw new Error(this.buildCmd + '命令不存在');
+    }
+    log.success('代码预检查通过');
+    const gitPublishPath = this.createPath(GIT_PUBLISH_FILE);
+    let gitPublish = readFile(gitPublishPath);
+    if (!gitPublish) {
+      gitPublish = (
+        await inquirer.prompt({
+          type: 'list',
+          name: 'gitPublish',
+          message: '请选择您想要上传代码的平台',
+          choices: GIT_PUBLISH_TYPE,
+        })
+      ).gitPublish;
+      writeFile(gitPublishPath, gitPublish);
+      log.success(
+        'git publish类型写入成功',
+        `${gitPublish} -> ${gitPublishPath}`
+      );
+    } else {
+      log.success('git publish类型获取成功', gitPublish);
+    }
+    this.gitPublish = gitPublish;
+  }
+
+  async deleteRemoteBranch() {
+    log.info('开始删除远程分支', this.branch);
+    await this.git.push(['origin', '--delete', this.branch]);
+    log.success('删除远程分支成功', this.branch);
+  }
+
+  async deleteLocalBranch() {
+    log.info('开始删除本地开发分支', this.branch);
+    await this.git.deleteLocalBranch(this.branch);
+    log.success('删除本地分支成功', this.branch);
+  }
+
+  async mergeBranchToMaster() {
+    log.info('开始合并代码', `[${this.branch}] -> [master]`);
+    await this.git.mergeFromTo(this.branch, 'master');
+    log.success('代码合并成功', `[${this.branch}] -> [master]`);
+  }
+
+  async checkTag() {
+    log.info('获取远程 tag 列表');
+    const tag = `${VERSION_RELEASE}/${this.version}`;
+    const tagList = await this.getRemoteBranchList(VERSION_RELEASE);
+    if (tagList.includes(this.version)) {
+      log.success('远程 tag 已存在', tag);
+      await this.git.push(['origin', `:refs/tags/${tag}`]);
+      log.success('远程 tag 已删除', tag);
+    }
+    const localTagList = await this.git.tags();
+    if (localTagList.all.includes(tag)) {
+      log.success('本地 tag 已存在', tag);
+      await this.git.tag('-d', tag);
+      log.success('本地 tag 已删除', tag);
+    } else {
+      log.success('本地 tag 创建成功', tag);
+      await this.git.pushTags('origin');
+      log.success('本地 tag 创建成功', tag);
+    }
   }
 
   async publish() {
@@ -642,9 +752,26 @@ pnpm-debug.log*
       type: this.gitPublish,
       prod: this.prod,
     });
+    await cloudBuild.prepare();
     await cloudBuild.init();
     ret = await cloudBuild.build();
-    console.log(ret);
+    if (ret) {
+      await this.uploadTemplate();
+    }
+    if (this.prod && ret) {
+      // 打tag
+      await this.checkTag();
+      // 切换分支到master
+      await this.checkoutBranch('main');
+      // 将开发分支代码合并到main
+      await this.mergeBranchToMaster();
+      // 将代码推送到远程main
+      await this.pushRemoteRepo('main');
+      // 删除本地开发分支
+      await this.deleteLocalBranch();
+      // 删除远程开发分支
+      await this.deleteRemoteBranch();
+    }
   }
 }
 
