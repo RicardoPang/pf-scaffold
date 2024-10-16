@@ -154,10 +154,10 @@ class Git {
       });
       const buildPath = path.resolve(this.dir, componentFile.buildPath);
       if (!fs.existsSync(buildPath)) {
-        throw new Error(`构建结果: ${buildPath}不存在`);
+        throw new Error(`构建结果：${buildPath}不存在！`);
       }
       const pkg = this.getPackageJson();
-      if (!pkg.file || !pkg.files.includes(componentFile.buildPath)) {
+      if (!pkg.files || !pkg.files.includes(componentFile.buildPath)) {
         throw new Error(
           `package.json中files属性未添加构建结果目录：[${componentFile.buildPath}]，请在package.json中手动添加！`
         );
@@ -433,7 +433,6 @@ pnpm-debug.log*
   async checkGitServer() {
     const gitServerPath = this.createPath(GIT_SERVER_FILE);
     let gitServer = readFile(gitServerPath);
-    console.log(gitServerPath, gitServer);
     if (!gitServer || this.refreshServer) {
       gitServer = (
         await inquirer.prompt({
@@ -640,7 +639,6 @@ pnpm-debug.log*
       const response = await request({
         url: ossTemplateFile.url,
       });
-      console.log(response);
       if (response) {
         const ossTempDir = path.resolve(
           this.homePath,
@@ -664,6 +662,51 @@ pnpm-debug.log*
         fse.emptyDirSync(ossTempDir);
       }
     }
+  }
+
+  async uploadComponentToNpm() {
+    if (this.isComponent()) {
+      log.info('开始发布NPM');
+      require('child_process').execSync('npm publish', {
+        cwd: this.dir,
+      });
+      log.success('NPM发布成功');
+    }
+  }
+
+  async saveComponentToDB() {
+    // 1. 将组件信息上传至数据库, RDS
+    log.info('上传组件信息至OSS+写入数据库');
+    const componentFile = this.isComponent();
+    let componentExamplePath = path.resolve(
+      this.dir,
+      componentFile.examplePath
+    );
+    let dirs = fs.readdirSync(componentExamplePath);
+    if (dirs.includes('dist')) {
+      componentExamplePath = path.resolve(componentExamplePath, 'dist');
+      dirs = fs.readdirSync(componentExamplePath);
+      componentFile.examplePath = `${componentFile.examplePath}/dist`;
+    }
+    dirs = dirs.filter((dir) => dir.match(/^index(\d)*.html$/));
+    componentFile.exampleList = dirs;
+    componentFile.exampleRealPath = componentExamplePath;
+    const data = await ComponentRequest.createComponent({
+      component: componentFile,
+      git: {
+        type: this.gitServer.type,
+        remote: this.remote,
+        version: this.version,
+        branch: this.branch,
+        login: this.login,
+        owner: this.owner,
+      },
+    });
+    if (!data) {
+      throw new Error('组件上传失败！');
+    }
+    // 2. 将组件多预览页面上传至OSS
+    return true;
   }
 
   async preparePublish() {
@@ -718,9 +761,9 @@ pnpm-debug.log*
   }
 
   async mergeBranchToMaster() {
-    log.info('开始合并代码', `[${this.branch}] -> [master]`);
-    await this.git.mergeFromTo(this.branch, 'master');
-    log.success('代码合并成功', `[${this.branch}] -> [master]`);
+    log.info('开始合并代码', `[${this.branch}] -> [main]`);
+    await this.git.mergeFromTo(this.branch, 'main');
+    log.success('代码合并成功', `[${this.branch}] -> [main]`);
   }
 
   async checkTag() {
@@ -746,19 +789,26 @@ pnpm-debug.log*
 
   async publish() {
     let ret = false;
-    await this.preparePublish();
-    const cloudBuild = new CloudBuild(this, {
-      buildCmd: this.buildCmd,
-      type: this.gitPublish,
-      prod: this.prod,
-    });
-    await cloudBuild.prepare();
-    await cloudBuild.init();
-    ret = await cloudBuild.build();
-    if (ret) {
-      await this.uploadTemplate();
+    if (this.isComponent()) {
+      log.info('开始发布组件');
+      ret = await this.saveComponentToDB();
+    } else {
+      await this.preparePublish();
+      const cloudBuild = new CloudBuild(this, {
+        buildCmd: this.buildCmd,
+        type: this.gitPublish,
+        prod: this.prod,
+      });
+      await cloudBuild.prepare();
+      await cloudBuild.init();
+      ret = await cloudBuild.build();
+      if (ret) {
+        await this.uploadTemplate();
+      }
     }
     if (this.prod && ret) {
+      // 完成组件上传Npm
+      await this.uploadComponentToNpm();
       // 打tag
       await this.checkTag();
       // 切换分支到master
